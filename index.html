@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#593a91">
+<meta name="description" content="NOORI PERFUME shop management, inventory, attar pricing and billing">
+<title>NOORI PERFUME Manager</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<header>
+  <div class="logo">N</div>
+  <div>
+    <b>NOORI PERFUME</b>
+    <small>Complete Shop Management</small>
+  </div>
+  <span id="cloud">Not connected</span>
+  <span id="who"></span>
+  <button id="logout" hidden>Logout</button>
+</header>
+
+<section id="login" class="login">
+  <h1>Welcome back</h1>
+  <p>Sign in to your store</p>
+  <form id="loginForm">
+    <label>Email<input id="email" type="email" required></label>
+    <label>Password<input id="password" type="password" required></label>
+    <button>Sign in</button>
+  </form>
+  <p id="loginError" class="error"></p>
+</section>
+
+<div id="app" hidden>
+
+<nav>
+  <button data-page="dashboard">Dashboard</button>
+  <button data-page="products">Products &amp; Stock</button>
+  <button data-page="sales">New Sale / Billing</button>
+  <button data-page="purchases">Purchases</button>
+  <button data-page="customers">Customers</button>
+  <button data-page="suppliers">Suppliers</button>
+  <button data-page="expenses">Expenses</button>
+  <button data-page="reports">Reports</button>
+  <button data-page="attars">Attar &amp; Calculator</button>
+  <button data-page="returns">Sales Returns</button>
+  <button data-page="labels">Product Labels</button>
+  <button data-page="scanner">Barcode Scanner</button>
+  <button data-page="activity">Activity Log</button>
+  <button data-page="settings">Settings &amp; Backup</button>
+</nav>
+
+<main>
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="page">
+  <h1>NOORI PERFUME Dashboard</h1>
+
+  <div class="adHero" id="adHero">
+    <div class="adContent">
+      <span class="eyebrow">NOORI PERFUME</span>
+      <h2 id="adTitleView">Fragrance that stays with you</h2>
+      <p id="adTextView">Attar • Perfumes • Premium Collection</p>
+      <div class="adActions" id="adMediaActions"></div>
+    </div>
+    <div class="adVisual">
+      <img id="adImageView" alt="Noori Perfume promotion" hidden>
+      <video id="adVideoView" controls playsinline muted loop hidden></video>
+    </div>
+    <div class="adControls" id="adControls" hidden>
+      <button type="button" class="alt tiny" id="adPrev" aria-label="Previous slide">‹</button>
+      <div class="adDots" id="adDots"></div>
+      <button type="button" class="alt tiny" id="adNext" aria-label="Next slide">›</button>
+      <button type="button" class="alt tiny" id="adTogglePlay">Pause</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <article>Today's Sales<strong id="todaySales">₹0</strong></article>
+    <article>Products<strong id="count">0</strong></article>
+    <article>Low Stock<strong id="low">0</strong></article>
+    <article>Today's Bills<strong id="bills">0</strong></article>
+  </div>
+
+  <div class="panel">
+    <h2>Quick overview</h2>
+    <div class="quickTiles">
+      <span>✨ Attar &amp; Perfumes</span>
+      <span>⌚ Watches</span>
+      <span>🎧 Earbuds</span>
+      <span>🧴 Personal Care</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Low stock products</h2>
+    <div id="lowList"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Recent sales</h2>
+    <div id="recent"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Customer Outstanding</h2>
+    <div id="dashboardCustomerDue"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier Outstanding</h2>
+    <div id="dashboardSupplierDue"></div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products" class="page" hidden>
+  <h1>Products &amp; Stock</h1>
+
+  <div class="toolbar">
+    <input id="search" placeholder="Search product / brand / SKU">
+    <select id="catFilter">
+      <option value="">All categories</option>
+    </select>
+    <button id="newProduct">＋ Add product</button>
+    <button id="newCategory" class="alt">＋ Category</button>
+  </div>
+
+  <div class="panel scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Category</th>
+          <th>SKU</th>
+          <th>Stock</th>
+          <th>Cost</th>
+          <th>Price</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="productRows"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Stock Adjustment</h2>
+    <form id="stockAdjustmentForm">
+      <label>Product<select id="adjustProduct"></select></label>
+      <label>Adjustment Type
+        <select id="adjustType">
+          <option value="add">Add Stock</option>
+          <option value="remove">Remove Stock</option>
+          <option value="set">Set Actual Stock</option>
+        </select>
+      </label>
+      <label>Quantity<input id="adjustQty" type="number" min="0.001" step="0.001" required></label>
+      <label>Reason<input id="adjustReason" required></label>
+      <button type="submit">Save Stock Adjustment</button>
+    </form>
+    <div id="stockAdjustmentRows"></div>
+  </div>
+</section>
+
+<!-- SALES -->
+<section id="sales" class="page" hidden>
+  <h1>New Sale / Billing</h1>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>Add items</h2>
+      <label>Product<select id="saleProduct"></select></label>
+      <div class="two">
+        <label>Qty<input id="saleQty" type="number" min="0.001" step="0.001" value="1"></label>
+        <label>Unit
+          <select id="saleUnit">
+            <option value="pcs">Pieces</option>
+            <option value="ml">ML</option>
+            <option value="bottle">Bottles</option>
+          </select>
+        </label>
+      </div>
+      <button id="addLine" class="alt">Add to bill</button>
+      <div id="cart"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Bill summary</h2>
+
+      <label>Customer
+        <input id="customer" list="customerOptions" placeholder="Walk-in customer">
+        <datalist id="customerOptions"></datalist>
+      </label>
+
+      <label>Discount type
+        <select id="discountType">
+          <option value="amount">Flat ₹</option>
+          <option value="percent">Percent %</option>
+        </select>
+      </label>
+
+      <label>Discount<input id="discount" type="number" min="0" value="0"></label>
+
+      <label>Payment mode
+        <select id="payMode">
+          <option>Cash</option>
+          <option>UPI</option>
+          <option>Card</option>
+          <option>Bank</option>
+          <option>Credit</option>
+          <option>Split</option>
+        </select>
+      </label>
+
+      <div id="splitPayment" hidden>
+        <div class="two">
+          <label>Cash amount ₹<input id="splitCash" type="number" min="0" step="0.01" value="0"></label>
+          <label>UPI/Card amount ₹<input id="splitOther" type="number" min="0" step="0.01" value="0"></label>
+        </div>
+      </div>
+
+      <p>Subtotal: <b id="subtotal">₹0</b></p>
+      <p>Discount: <b id="discountOut">₹0</b></p>
+      <h2>Total: <span id="total">₹0</span></h2>
+
+      <button id="finish">Complete sale &amp; Print bill</button>
+      <button id="clear" class="alt">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Customer Payment / Credit</h2>
+    <p class="muted">Customer payment collection and outstanding balance.</p>
+    <div id="saleCustomerDue"></div>
+  </div>
+</section>
+
+<!-- PURCHASES -->
+<section id="purchases" class="page" hidden>
+  <h1>Purchases</h1>
+
+  <div class="toolbar">
+    <button type="button" id="purchaseNewProduct">＋ Add New Product</button>
+  </div>
+
+  <div class="panel narrow">
+    <form id="purchaseForm">
+      <label>Product<select id="purchaseProduct"></select></label>
+
+      <div class="two">
+        <label>Quantity<input id="purchaseQty" type="number" min="0.001" step="0.001" required></label>
+        <label>Unit
+          <select id="purchaseUnit">
+            <option value="pcs">Pieces</option>
+            <option value="ml">ML</option>
+            <option value="bottle">Bottles</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Total purchase amount ₹<input id="purchaseCost" type="number" min="0" step="0.01" required></label>
+
+      <label>Supplier
+        <input id="supplier" list="supplierOptions">
+        <datalist id="supplierOptions"></datalist>
+      </label>
+
+      <p class="muted" id="purchaseUnitHelp">
+        Enter total amount paid for this purchase. Cost per ml / gram / piece is calculated automatically; selling price remains unchanged.
+      </p>
+      <button>Save purchase</button>
+    </form>
+  </div>
+
+  <div class="panel narrow">
+    <h2>Transfer Packed Attar to Loose Stock</h2>
+    <form id="transferForm">
+      <label>Packed product<select id="transferProduct"></select></label>
+      <label>Number of packed pieces<input id="transferPieces" type="number" min="1" step="1" value="1"></label>
+      <label>ML in each piece<input id="transferMl" type="number" min="0.1" step="0.1" required></label>
+      <label>Loose attar product<select id="transferTarget"></select></label>
+      <button>Transfer into loose stock</button>
+    </form>
+    <p class="muted">Packed stock decreases by pieces; loose stock increases by total ml.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Recent purchases</h2>
+    <div id="purchaseRows"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier Payments</h2>
+    <form id="supplierPaymentForm">
+      <label>Supplier<select id="supplierPaymentName"></select></label>
+      <label>Payment Amount ₹<input id="supplierPaymentAmount" type="number" min="0.01" step="0.01" required></label>
+      <label>Payment Mode
+        <select id="supplierPaymentMode">
+          <option>Cash</option>
+          <option>UPI</option>
+          <option>Card</option>
+          <option>Bank</option>
+        </select>
+      </label>
+      <label>Note<input id="supplierPaymentNote"></label>
+      <button>Save Supplier Payment</button>
+    </form>
+    <div id="supplierPaymentRows"></div>
+  </div>
+</section>
+
+<!-- CUSTOMERS -->
+<section id="customers" class="page" hidden>
+  <h1>Customer Management</h1>
+
+  <div class="panel narrow">
+    <h2>Add / Edit Customer</h2>
+    <form id="customerForm">
+      <input id="customerId" type="hidden">
+      <label>Customer Name<input id="customerName" required></label>
+      <label>Mobile Number<input id="customerMobile" inputmode="tel"></label>
+      <label>Address<textarea id="customerAddress" rows="2"></textarea></label>
+      <label>Notes<input id="customerNotes"></label>
+      <button type="submit">Save Customer</button>
+      <button type="button" id="customerCancel" class="alt">Cancel</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Customer List</h2>
+    <input id="customerSearch" placeholder="Search customer name / mobile">
+    <div id="customerRows"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Customer Outstanding &amp; Payment History</h2>
+    <div id="customerCreditRows"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Receive Customer Payment</h2>
+    <form id="customerPaymentForm">
+      <label>Customer<select id="customerPaymentName"></select></label>
+      <label>Amount ₹<input id="customerPaymentAmount" type="number" min="0.01" step="0.01" required></label>
+      <label>Payment Mode
+        <select id="customerPaymentMode">
+          <option>Cash</option>
+          <option>UPI</option>
+          <option>Card</option>
+          <option>Bank</option>
+        </select>
+      </label>
+      <label>Note<input id="customerPaymentNote"></label>
+      <button>Receive Payment</button>
+    </form>
+  </div>
+</section>
+
+<!-- SUPPLIERS -->
+<section id="suppliers" class="page" hidden>
+  <h1>Supplier Management</h1>
+
+  <div class="panel narrow">
+    <h2>Add / Edit Supplier</h2>
+    <form id="supplierForm">
+      <input id="supplierId" type="hidden">
+      <label>Supplier Name<input id="supplierName" required></label>
+      <label>Mobile Number<input id="supplierMobile" inputmode="tel"></label>
+      <label>Address<textarea id="supplierAddress" rows="2"></textarea></label>
+      <label>Notes<input id="supplierNotes"></label>
+      <button type="submit">Save Supplier</button>
+      <button type="button" id="supplierCancel" class="alt">Cancel</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier List</h2>
+    <input id="supplierSearch" placeholder="Search supplier name / mobile">
+    <div id="supplierRows"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier Outstanding</h2>
+    <div id="supplierDueRows"></div>
+  </div>
+</section>
+
+<!-- EXPENSES -->
+<section id="expenses" class="page" hidden>
+  <h1>Expenses</h1>
+
+  <div class="panel narrow">
+    <form id="expenseForm">
+      <label>Expense title<input id="expenseTitle" required></label>
+      <label>Amount ₹<input id="expenseAmount" type="number" min="0.01" step="0.01" required></label>
+      <label>Payment mode
+        <select id="expenseMode">
+          <option>Cash</option>
+          <option>UPI</option>
+          <option>Card</option>
+          <option>Bank</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label>Date<input id="expenseDate" type="date" required></label>
+      <button>Save expense</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Recent expenses</h2>
+    <div id="expenseRows"></div>
+  </div>
+</section>
+
+<!-- REPORTS -->
+<section id="reports" class="page" hidden>
+  <h1>Reports</h1>
+
+  <div class="toolbar">
+    <label>From<input id="from" type="date"></label>
+    <label>To<input id="to" type="date"></label>
+    <button id="runReport">Run report</button>
+    <button id="csv" class="alt">Export CSV</button>
+  </div>
+
+  <div class="stats">
+    <article>Sales<strong id="rSales">₹0</strong></article>
+    <article>Cost<strong id="rCost">₹0</strong></article>
+    <article>Gross Profit<strong id="rProfit">₹0</strong></article>
+    <article>Expenses<strong id="rExpenses">₹0</strong></article>
+  </div>
+
+  <div class="panel" id="reportRows"></div>
+
+  <div class="panel">
+    <h2>Customer-wise Sales Report</h2>
+    <div id="customerSalesReport"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Supplier-wise Purchase Report</h2>
+    <div id="supplierPurchaseReport"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Stock Valuation</h2>
+    <div id="stockValuationReport"></div>
+  </div>
+</section>
+
+<!-- ATTARS -->
+<section id="attars" class="page" hidden>
+  <h1>Attar &amp; Perfume Calculator</h1>
+
+  <div class="panel">
+    <h2>Attar Master — linked with Products</h2>
+    <p>
+      Loose attar products added in Products are shown here automatically.
+      Purchase cost and 3 ml / 6 ml / 12 ml customer rates are managed in Product Edit.
+      No duplicate cost entry is required.
+    </p>
+    <button type="button" id="attarAddProduct">＋ Add Loose Attar Product</button>
+    <div id="attarRows"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Perfume Cost Calculator</h2>
+    <label>Select loose attar<select id="calcAttar"></select></label>
+    <p class="muted" id="calcRateInfo">Purchase cost and menu prices load from the selected product.</p>
+    <label>Making charges for 30 ml ₹<input id="making" type="number" min="0" step="0.01" value="150"></label>
+    <label>Perfume quantity (ml)<input id="calcQty" type="number" min="0.1" step="0.1" value="30"></label>
+    <button type="button" id="calculatePerfume">Calculate Cost</button>
+    <h2 id="calcResult">Estimated cost: ₹0.00</h2>
+    <p class="muted">
+      Calculation uses the selected product's cost per ml × 12 ml + making charges for a 30 ml reference, scaled to the requested bottle size. This is an estimated making cost, not an automatic selling price.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Customer Attar Price Menu</h2>
+    <p>These prices are taken directly from each loose attar product and can be edited in Product Edit.</p>
+    <button id="printAttarMenu">Print / Save PDF (A4)</button>
+    <div id="attarMenuPreview"></div>
+  </div>
+</section>
+
+<!-- RETURNS -->
+<section id="returns" class="page" hidden>
+  <h1>Sales Return &amp; Refund</h1>
+
+  <div class="panel narrow">
+    <form id="returnForm">
+      <label>Original bill<select id="returnBill" required></select></label>
+      <label>Product to return<select id="returnProduct" required></select></label>
+      <label>Return quantity<input id="returnQty" type="number" min="0.001" step="0.001" value="1" required></label>
+      <label>Refund amount ₹<input id="refundAmount" type="number" min="0" step="0.01" required></label>
+      <label>Reason<input id="returnReason" placeholder="Optional"></label>
+      <button>Save Return &amp; Update Stock</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Return History</h2>
+    <div id="returnRows"></div>
+  </div>
+</section>
+
+<!-- LABELS -->
+<section id="labels" class="page" hidden>
+  <h1>Product Sticker / Label Printing</h1>
+
+  <div class="panel">
+    <p>Choose products and print labels showing the same SKU stored in inventory.</p>
+    <label>Label size
+      <select id="labelSize">
+        <option value="50x30">50 × 30 mm</option>
+        <option value="60x40">60 × 40 mm</option>
+        <option value="40x25">40 × 25 mm</option>
+      </select>
+    </label>
+    <div id="labelProducts"></div>
+    <button id="printLabels">Print Selected Labels</button>
+  </div>
+</section>
+
+<!-- BARCODE SCANNER -->
+<section id="scanner" class="page" hidden>
+  <h1>Barcode &amp; QR Scanner</h1>
+
+  <div class="panel narrow">
+    <h2>Scan Product</h2>
+    <p class="muted">Camera scanning requires browser camera permission and a secure connection or localhost.</p>
+    <video id="scannerVideo" autoplay playsinline hidden></video>
+    <div id="scannerPreview"></div>
+    <button type="button" id="startScanner">Start Camera Scanner</button>
+    <button type="button" id="stopScanner" class="alt">Stop Scanner</button>
+    <label>Manual SKU / Barcode
+      <input id="manualSku" placeholder="Enter or scan SKU">
+    </label>
+    <button type="button" id="lookupSku">Find Product</button>
+    <div id="scannerResult"></div>
+  </div>
+</section>
+
+<!-- ACTIVITY LOG -->
+<section id="activity" class="page" hidden>
+  <h1>Activity Log</h1>
+
+  <div class="panel">
+    <h2>Recent Shop Activities</h2>
+    <p class="muted">Sales, purchases, stock adjustments, product changes and payment activities.</p>
+    <div class="toolbar">
+      <select id="activityFilter">
+        <option value="">All Activities</option>
+        <option value="sale">Sales</option>
+        <option value="purchase">Purchases</option>
+        <option value="product">Products</option>
+        <option value="stock">Stock</option>
+        <option value="payment">Payments</option>
+      </select>
+      <button type="button" id="refreshActivity">Refresh</button>
+    </div>
+    <div id="activityRows"></div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="page" hidden>
+  <h1>Settings &amp; Backup</h1>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>Store details &amp; Advertisements</h2>
+      <form id="settingsForm" class="formGrid">
+        <label>Store name<input id="storeName" value="NOORI PERFUME"></label>
+        <label>Phone<input id="storePhone"></label>
+        <label>Address<input id="storeAddress"></label>
+        <label>Default low-stock alert<input id="reorder" type="number" min="0" value="5"></label>
+
+        <h3>Single ad fallback (optional)</h3>
+        <label>Ad headline<input id="adTitle" placeholder="New fragrance collection"></label>
+        <label>Ad text<input id="adText" placeholder="Explore our latest perfumes"></label>
+        <label>Image URL<input id="adImage" placeholder="https://… (public image URL)"></label>
+        <label>Video URL<input id="adVideo" placeholder="https://… (.mp4 or video link)"></label>
+        <label>Slides raw list (auto-synced: Headline | Text | Image | Video)
+          <textarea id="adSlides" rows="3" placeholder="New Attar Collection | Explore our fragrances | https://image-link | https://video-link"></textarea>
+        </label>
+
+        <button type="submit">Save settings</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>Slide Manager &amp; Backup</h2>
+      <div class="panel inner" id="adSlideManager">
+        <h3>Advertisement Slide Manager</h3>
+        <input type="hidden" id="adEditIndex" value="-1">
+        <label>Slide headline<input id="smTitle" placeholder="Eid / Festive Attar Offer"></label>
+        <label>Slide promo text<input id="smText" placeholder="Flat 10% on 12ml attar &amp; watches"></label>
+        <label>Image URL<input id="smImage" placeholder="https://… or choose photo below"></label>
+        <label>Choose photo from device<input id="smImageFile" type="file" accept="image/*"></label>
+        <label>Video URL<input id="smVideo" placeholder="https://… or choose video below"></label>
+        <label>Choose video from device<input id="smVideoFile" type="file" accept="video/*"></label>
+        <div id="smPreviewStatus" class="muted"></div>
+        <div class="two">
+          <button type="button" id="smSaveSlide">＋ Add / Update slide</button>
+          <button type="button" id="smClearSlide" class="alt">Clear slide form</button>
+        </div>
+        <div id="adSlideList"></div>
+      </div>
+
+      <hr>
+      <h2>Backup &amp; Restore</h2>
+      <p>Download a JSON backup or restore a previous backup.</p>
+      <button type="button" id="backup">Download JSON backup</button>
+      <label>Restore backup<input id="restore" type="file" accept="application/json"></label>
+      <p id="backupMsg" class="muted"></p>
+
+      <hr>
+      <h3>Cloud Backup History</h3>
+      <p class="muted">Snapshots are saved in Firestore subcollection <code>shops/{shopId}/backups</code> (last 5 kept).</p>
+      <button type="button" id="createCloudBackup">Create cloud snapshot</button>
+      <button type="button" id="refreshBackupHistory" class="alt">Refresh Backup History</button>
+      <div id="backupHistoryRows"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Product Media Upload &amp; Gallery</h2>
+    <p class="muted">Select a product and add photo/video by link or choose from your device.</p>
+
+    <label>Product<select id="mediaProduct"></select></label>
+    <label>Media URL (Photo or Video)<input id="mediaUrl" placeholder="https://…"></label>
+    <label>Product Photos (from device)<input id="productPhotoUpload" type="file" accept="image/*" multiple></label>
+    <label>Promotional Images (from device)<input id="adPhotoUpload" type="file" accept="image/*" multiple></label>
+    <label>Promotional Videos (from device)<input id="adVideoUpload" type="file" accept="video/*" multiple></label>
+
+    <div class="two">
+      <button type="button" id="setProductPhoto">Set as product photo</button>
+      <button type="button" id="addAdSlide" class="alt">Add as dashboard slide</button>
+    </div>
+    <div class="two">
+      <label>Slide headline<input id="adSlideTitle" placeholder="New Attar Collection"></label>
+      <label>Slide text<input id="adSlideText" placeholder="Explore our fragrances"></label>
+    </div>
+
+    <div id="mediaUploadPreview"></div>
+    <p id="mediaUploadStatus" class="muted"></p>
+  </div>
+
+  <div class="panel">
+    <h2>Store Data &amp; Security</h2>
+    <p id="role"></p>
+    <div id="docSize" class="muted"></div>
+    <div class="docBarOuter"><div id="docSizeBar" class="docBarInner"></div></div>
+    <p class="muted">Use the same owner login on your shop computer. Keep your password private. Existing shop data and access rules are preserved.</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div id="modal" class="overlay" hidden>
+  <form id="productForm" class="modal">
+    <h2 id="modalTitle">Add product</h2>
+    <input id="pid" type="hidden">
+
+    <label>Product name<input id="pname" required></label>
+
+    <div class="two">
+      <label>Category<select id="pcat"></select></label>
+      <label>Brand<input id="brand"></label>
+    </div>
+
+    <div class="two">
+      <label>SKU / Barcode<input id="sku" placeholder="Auto-generated if blank"></label>
+      <label>Product stock type
+        <select id="stockType">
+          <option value="normal">Normal product</option>
+          <option value="loose">Loose attar (ml)</option>
+          <option value="packed">Packed attar (pieces)</option>
+        </select>
+      </label>
+
+      <label>Stock unit
+        <select id="unit">
+          <option value="pcs">Pieces</option>
+          <option value="ml">ML</option>
+          <option value="gram">Gram</option>
+          <option value="bottle">Bottles</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="two">
+      <label>Quality / Grade<input id="quality" placeholder="Standard / Premium"></label>
+      <label>Model / Design<input id="model" placeholder="Optional"></label>
+    </div>
+
+    <label>Product photo URL<input id="photoUrl" type="url" placeholder="Optional image URL"></label>
+
+    <div class="two">
+      <label>Opening stock<input id="stock" type="number" min="0" step="0.001" value="0"></label>
+      <label>Low stock at<input id="pReorder" type="number" min="0" value="5"></label>
+    </div>
+
+    <div class="two">
+      <label id="contentMlWrap">Content per packed piece (ml)
+        <input id="contentMl" type="number" min="0" step="0.1" value="0">
+      </label>
+
+      <div class="two">
+        <label id="price3Wrap">Loose 3 ml selling price ₹
+          <input id="price3" type="number" min="0" step="0.01" value="0">
+        </label>
+        <label id="price6Wrap">Loose 6 ml selling price ₹
+          <input id="price6" type="number" min="0" step="0.01" value="0">
+        </label>
+      </div>
+
+      <label id="price12Wrap">Loose 12 ml selling price ₹
+        <input id="price12" type="number" min="0" step="0.01" value="0">
+      </label>
+
+      <label>Purchase cost per stock unit (₹ per ml / gram / piece)
+        <input id="cost" type="number" min="0" step="0.01" value="0">
+      </label>
+
+      <label id="genericPriceWrap">Selling price per piece ₹
+        <input id="price" type="number" min="0" step="0.01" value="0" required>
+      </label>
+    </div>
+
+    <label>Notes<input id="notes"></label>
+    <button>Save product</button>
+    <button type="button" id="close" class="alt">Cancel</button>
+  </form>
+</div>
+
+<div id="toast"></div>
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
