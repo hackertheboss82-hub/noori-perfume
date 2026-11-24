@@ -876,7 +876,7 @@ function printBill(s) {
   const w = open('', '_blank', 'width=480,height=760');
   if (!w) return toast('Bill print ke liye pop-ups allow karo', 'error');
   const storeName = d.settings.storeName || 'NOORI PERFUME';
-  w.document.write(`<html><head><title>${esc(storeName)} Bill</title><style>body{font:14px Arial;color:#302345;padding:20px}h1{text-align:center;color:#6840a0;margin:0}small{display:block;text-align:center;color:#9a4b86;margin:4px}hr{border:0;border-top:1px dashed #987}table{width:100%;border-collapse:collapse}td{padding:8px 2px;border-bottom:1px solid #eee}td:last-child{text-align:right}.total{font-size:22px;color:#6b3b9c;font-weight:bold;text-align:right}</style></head><body><h1>${esc(storeName)}</h1><small>FRAGRANCE • ATTAR • PERFUMES</small><center>${esc(d.settings.address || '')}<br>${esc(d.settings.phone || '')}</center><hr>Bill ${esc(s.billNo)} · ${esc(s.date)}<br>Customer: ${esc(s.customer || 'Walk-in')} · Mode: ${esc(s.mode)}<hr><table>${(s.lines || []).map((x) => `<tr><td>${esc(x.name)}<br><small>${x.qty} ${esc(x.unit)} × ${money(x.price)}</small></td><td>${money(x.amount ?? x.qty * x.price)}</td></tr>`).join('')}</table><hr>Subtotal: ${money(s.subtotal)}<br>Discount: ${money(s.discount)}<div class="total">TOTAL ${money(s.total)}</div><hr><center>Thank you for shopping with ${esc(storeName)}</center><script>onload=()=>print()<\/script></body></html>`);
+  w.document.write(`<html><head><title>${esc(storeName)} Bill</title><style>body{font:14px Arial;color:#302345;padding:20px}h1{text-align:center;color:#6840a0;margin:0}small{display:block;text-align:center;color:#9a4b86;margin:4px}hr{border:0;border-top:1px dashed #987}table{width:100%;border-collapse:collapse}td{padding:8px 2px;border-bottom:1px solid #eee}td:last-child{text-align:right}.total{font-size:22px;color:#6b3b9c;font-weight:bold;text-align:right}</style></head><body><h1>${esc(storeName)}</h1><small>FRAGRANCE • ATTAR • PERFUMES</small><center>${esc(d.settings.address || '')}<br>${esc(d.settings.phone || '')}</center><hr>Bill ${esc(s.billNo)} · ${esc(s.date)}<br>Customer: ${esc(s.customer || 'Walk-in')} · Mode: ${esc(s.mode)}<hr><table>${(s.lines || []).map((x) => `<tr><td>${esc(x.name)}<br><small>${x.qty} ${x.unit} × ${money(x.price)}</small></td><td>${money(x.amount ?? x.qty * x.price)}</td></tr>`).join('')}</table><hr>Subtotal: ${money(s.subtotal)}<br>Discount: ${money(s.discount)}<div class="total">TOTAL ${money(s.total)}</div><hr><center>Thank you for shopping with ${esc(storeName)}</center><script>onload=()=>print()<\/script></body></html>`);
   w.document.close();
 }
 
@@ -1029,7 +1029,6 @@ function ensurePurchaseUpgradesUI() {
     });
   }
 
-  // Ensure Purchase Orders list box exists right above Purchase History
   if ($('purchaseRows') && !$('purchaseOrderBox')) {
     const poBox = document.createElement('div');
     poBox.id = 'purchaseOrderBox';
@@ -1282,6 +1281,24 @@ function deletePurchaseEntry(purchaseId) {
   logActivity('purchase', `Purchase deleted: ${item.name} (${item.qty} ${item.unit})`);
   changed();
   toast('Purchase deleted & stock adjusted');
+}
+
+function deleteReturnEntry(returnId, fallbackIndex = -1) {
+  const list = d.returns || [];
+  const idx = returnId ? list.findIndex((x) => x.id === returnId) : fallbackIndex;
+  if (idx < 0 || !list[idx]) return;
+  const item = list[idx];
+  if (!confirm(`Delete return entry "${item.productName} (${item.qty} ${item.unit})"? Stock wapas ghatega.`)) return;
+  const sale = d.sales.find((s) => s.id === item.saleId || s.billNo === item.billNo);
+  const line = sale?.lines?.[item.lineIndex];
+  const product = d.products.find((p) => p.id === (item.productId || line?.id) || p.name === item.productName);
+  if (product && +item.qty > 0) {
+    product.stock = Math.max(0, +((+product.stock || 0) - (+item.qty || 0)).toFixed(3));
+  }
+  d.returns = list.filter((_, i) => i !== idx);
+  logActivity('sale', `Return deleted: ${item.productName} (${item.qty} ${item.unit}) on ${item.billNo || ''}`);
+  changed();
+  toast('Return entry deleted & stock updated');
 }
 
 on('purchaseForm', 'submit', (e) => {
@@ -2189,9 +2206,13 @@ function render() {
   updateReturnProducts();
 
   if ($('returnRows')) {
-    $('returnRows').innerHTML = d.returns.slice().reverse().map((x) =>
-      `<div class="line">${esc(x.billNo)} · ${esc(x.productName)} · ${x.qty} ${esc(x.unit)} · Refund ${money(x.refund)} · ${esc(x.date)}</div>`
-    ).join('') || 'No returns yet';
+    const list = d.returns || [];
+    $('returnRows').innerHTML = list.length ? list.map((x, idx) => ({ x, idx })).reverse().map(({ x, idx }) =>
+      `<div class="line"><span>${esc(x.billNo || '')} · ${esc(x.productName)} · ${x.qty} ${esc(x.unit)} · Refund ${money(x.refund)} · ${esc(x.date || '')}</span><button type="button" class="alt tiny danger" data-del-ret="${esc(x.id || '')}" data-ret-idx="${idx}">Del</button></div>`
+    ).join('') : 'No returns yet';
+    $$('[data-del-ret]').forEach((b) => {
+      b.onclick = () => deleteReturnEntry(b.dataset.delRet, Number(b.dataset.retIdx));
+    });
   }
 
   if ($('labelProducts')) {
